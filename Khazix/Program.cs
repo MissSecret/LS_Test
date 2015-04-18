@@ -17,8 +17,6 @@ namespace Khazix
         private static Spell Q, W, E, R;
         private static SpellDataInst Qi, Wi, Ei, Ri;
         private static Menu config;
-        private static bool Wnorm = true, Wevolved, Eevolved;
-        private static bool Jumping = false;
 
         private static void Main(string[] args)
         {
@@ -62,14 +60,6 @@ namespace Khazix
             config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
             Orbwalker = new Orbwalking.Orbwalker(config.SubMenu("Orbwalking"));
 
-            config.AddSubMenu(new Menu("Combo", "Combo"));
-            config.SubMenu("Combo").AddItem(new MenuItem("UseQCombo", "Use Q")).SetValue(true);
-            config.SubMenu("Combo").AddItem(new MenuItem("UseWCombo", "Use W")).SetValue(true);
-
-            config.AddSubMenu(new Menu("Harass", "Harass"));
-            config.SubMenu("Harass").AddItem(new MenuItem("UseQHarass", "Use Q")).SetValue(true);
-            config.SubMenu("Harass").AddItem(new MenuItem("UseWHarass", "Use W")).SetValue(true);
-
             // Keys
             var keys = config.AddSubMenu(new Menu("Keys", "Keys"));
             {
@@ -102,34 +92,6 @@ namespace Khazix
             {
                 JumpIt();
                 //JumpIt(ObjectManager.Get<Obj_AI_Hero>().FirstOrDefault());
-            }
-
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
-                Harass();
-        }
-
-        private static void Harass()
-        {
-            Obj_AI_Hero target = TargetSelector.GetTarget(W.Range, TargetSelector.DamageType.Physical);
-            if (target != null)
-            {
-                if (Vector3.Distance(Player.ServerPosition, target.ServerPosition) <= Q.Range && config.Item("UseQHarass").GetValue<bool>() && Q.IsReady() && !Jumping)
-                {
-                    Orbwalker.SetAttack(false);
-                    Q.Cast(target);
-                    Orbwalker.SetAttack(true);
-                }
-
-                if (Vector3.Distance(Player.ServerPosition, target.ServerPosition) <= W.Range && config.Item("UseWHarass").GetValue<bool>() && W.IsReady() &&
-                    Wnorm)
-                {
-                    W.Cast(target);
-                }
-                if (Vector3.Distance(Player.ServerPosition, target.ServerPosition) <= W.Range && config.Item("UseWHarass").GetValue<bool>() && W.IsReady() &&
-                    Wevolved)
-                {
-                    W.Cast(target);
-                }
             }
         }
 
