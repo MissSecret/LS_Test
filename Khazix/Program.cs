@@ -104,7 +104,7 @@ namespace Khazix
                 //JumpIt(ObjectManager.Get<Obj_AI_Hero>().FirstOrDefault());
             }
 
-            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Harass)
+            if (Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Combo || Orbwalker.ActiveMode == Orbwalking.OrbwalkingMode.Mixed)
                 Harass();
         }
 
