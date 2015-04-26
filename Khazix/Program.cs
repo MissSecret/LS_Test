@@ -30,20 +30,15 @@ namespace Khazix
             if (Player.BaseSkinName != Name)
                 return;
 
-            Qi = Player.GetSpell(SpellSlot.Q);
-            Wi = Player.GetSpell(SpellSlot.W);
-            Ei = Player.GetSpell(SpellSlot.E);
-            Ri = Player.GetSpell(SpellSlot.R);
+            Qi = Player.Spellbook.GetSpell(SpellSlot.Q);
+            Wi = Player.Spellbook.GetSpell(SpellSlot.W);
+            Ei = Player.Spellbook.GetSpell(SpellSlot.E);
+            Ri = Player.Spellbook.GetSpell(SpellSlot.R);
 
-            Q = new Spell(Qi.Slot, Qi.SData.CastRange);
-            W = new Spell(Wi.Slot, Wi.SData.CastRange);
-            E = new Spell(Ei.Slot, Ei.SData.CastRange);
-            R = new Spell(Ri.Slot, Ri.SData.CastRange);
-
-            InitSpell(Q, Qi);
-            InitSpell(W, Wi);
-            InitSpell(E, Ei);
-            InitSpell(R, Ri);
+            Q = NewSpell(Qi);
+            W = NewSpell(Wi);
+            E = NewSpell(Ei);
+            R = NewSpell(Ri);
 
             W.SetSkillshot(0.225f, 80f, 828.5f, true, SkillshotType.SkillshotLine);
             E.SetSkillshot(0.25f, 100f, 1000f, false, SkillshotType.SkillshotCircle);
@@ -57,19 +52,20 @@ namespace Khazix
             config.AddSubMenu(tsMenu);
 
             // Orbwalker
-            config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
-            Orbwalker = new Orbwalking.Orbwalker(config.SubMenu("Orbwalking"));
+            if (config.Item("UseOrbwalker") == null || config.Item("UseOrbwalker").GetValue<bool>())
+            {
+                config.AddSubMenu(new Menu("Orbwalking", "Orbwalking"));
+                Orbwalker = new Orbwalking.Orbwalker(config.SubMenu("Orbwalking"));
+            }
 
             // Keys
             var keys = config.AddSubMenu(new Menu("Keys", "Keys"));
             {
                 keys.AddItem(new MenuItem("Jump", "Jump To Mouse").SetValue(new KeyBind('T', KeyBindType.Press)));
+                keys.AddItem(new MenuItem("JumpHome", "Jump To Home").SetValue(new KeyBind('G', KeyBindType.Press)));
             }
 
-            var settings = config.AddSubMenu(new Menu("Misc", "Misc"));
-            {
-                settings.AddItem(new MenuItem("DelayJump", "Delay of Jump").SetValue(new Slider(600, 580, 620)));
-            }
+            config.AddItem(new MenuItem("UseOrbwalker", "Use Orbwalker (Need Reload)").SetValue(false));
 
             config.AddToMainMenu();
 
@@ -88,41 +84,34 @@ namespace Khazix
         {
             if (Player.IsDead) return;
 
-            if (config.Item("Jump").GetValue<KeyBind>().Active)
+            if (config.Item("Jump").GetValue<KeyBind>().Active && E.IsReady())
             {
-                JumpIt();
-                //JumpIt(ObjectManager.Get<Obj_AI_Hero>().FirstOrDefault());
+                JumpExploit();
             }
         }
 
-        private static void JumpIt(Obj_AI_Base unit)
+        private static void JumpExploit()
         {
-            if (!E.IsReady()) return;
-
-            var myPos = Player.ServerPosition;
-            var enemyPos = unit.ServerPosition;
-            var castPos = myPos - (myPos - enemyPos).Normalized() * E.Range;
-            E.Cast(castPos);
-            Utility.DelayAction.Add(600,
-                () => E.Cast(Game.CursorPos));
-            return;
-        }
-
-        private static void JumpIt()
-        {
-            if (!E.IsReady()) return;
-
             var myPos = Player.ServerPosition;
             var castPos = myPos - (myPos - Game.CursorPos).Normalized() * E.Range;
             E.Cast(castPos);
-            Utility.DelayAction.Add(config.Item("DelayJump").GetValue<Slider>().Value,
+            Utility.DelayAction.Add(600,
                 () => E.Cast(Game.CursorPos));
         }
 
-        private static void InitSpell(Spell s, SpellDataInst si)
+        private static Spell NewSpell(SpellDataInst spell, bool IsChargedSkill = false)
         {
-            s = new Spell(si.Slot, si.SData.CastRange);
-            return;
+            var s = new Spell(spell.Slot, -1f);
+
+            if (spell.SData.CastRangeDisplayOverride <= 0)
+                if (spell.SData.CastRange <= 0)
+                    s.Range = spell.SData.CastRadius;
+                else
+                    s.Range = IsChargedSkill ? spell.SData.CastRange : spell.SData.CastRadius;
+            else
+                s.Range = spell.SData.CastRangeDisplayOverride;
+
+            return s;
         }
     }
 }
