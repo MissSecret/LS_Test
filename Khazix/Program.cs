@@ -61,7 +61,7 @@ namespace Khazix
             // Keys
             var keys = config.AddSubMenu(new Menu("Keys", "Keys"));
             {
-                keys.AddItem(new MenuItem("Jump", "Jump To Mouse").SetValue(new KeyBind('T', KeyBindType.Press)));
+                keys.AddItem(new MenuItem("JumpCursor", "Jump To Cursor").SetValue(new KeyBind('T', KeyBindType.Press)));
                 keys.AddItem(new MenuItem("JumpHome", "Jump To Home").SetValue(new KeyBind('G', KeyBindType.Press)));
             }
 
@@ -84,19 +84,53 @@ namespace Khazix
         {
             if (Player.IsDead) return;
 
-            if (config.Item("Jump").GetValue<KeyBind>().Active && E.IsReady())
+            if (config.Item("JumpCursor").GetValue<KeyBind>().Active && E.IsReady())
             {
-                JumpExploit();
+                JumpExploit(JumpType.ToCursor);
+            }
+
+            if (config.Item("JumpHome").GetValue<KeyBind>().Active && E.IsReady())
+            {
+                JumpExploit(JumpType.ToHome);
             }
         }
 
-        private static void JumpExploit()
+        private static void JumpExploit(JumpType type)
         {
-            var myPos = Player.ServerPosition;
-            var castPos = myPos - (myPos - Game.CursorPos).Normalized() * E.Range;
+            Vector3 myPos = Player.ServerPosition;
+            Vector3 castPos;
+
+            if (type == JumpType.ToCursor)
+                castPos = myPos - (myPos - Game.CursorPos).Normalized() * E.Range;
+            else
+                castPos = myPos - (myPos - GetHomePos(Player.Team)).Normalized() * E.Range;
+
             E.Cast(castPos);
             Utility.DelayAction.Add(600,
                 () => E.Cast(Game.CursorPos));
+        }
+
+        private static Vector3 GetHomePos(GameObjectTeam team)
+        {
+            if (team == GameObjectTeam.Order) // Blue Team
+            {
+                return new Vector3(396f, 462f, 182.1325f);
+            }
+            else if (team == GameObjectTeam.Chaos) // Red Team
+            {
+                return new Vector3(14340f, 14390f, 171.9777f);
+            }
+            else
+            {
+                Game.PrintChat("Unknown Team : " + team.ToString());
+                return new Vector3();
+            }
+        }
+
+        private static enum JumpType
+        {
+            ToCursor = 0,
+            ToHome = 1
         }
 
         private static Spell NewSpell(SpellDataInst spell, bool IsChargedSkill = false)
